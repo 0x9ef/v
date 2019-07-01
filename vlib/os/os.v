@@ -29,10 +29,6 @@ const (
 	MAX_PATH = 4096
 )
 
-const (
-	FILE_ATTRIBUTE_DIRECTORY = 16 // Windows 
-)
-
 import const (
 	INVALID_FILE_ATTRIBUTES
 ) 
@@ -234,23 +230,28 @@ pub fn (f File) writeln(s string) {
 	C.fputs('\n', f.cfile)
 }
 
+// `close` closing file stream. Flushing current 
+// stream and closing file on system level. 
+// The memory allocated for the buffer is freed.
 pub fn (f File) close() {
 	C.fclose(f.cfile)
 }
 
+// `close_all` closing all streams.
+pub fn close_all() {
+	C.fcloseall()
+}
+
 fn close_file(fp *FILE) {
-	$if windows {
+	if !isnil(fp) {
+		C.fclose(fp)
 	}
-	if isnil(fp) {
-		return
-	}
-	C.fclose(fp)
 }
 
 // system starts the specified command, waits for it to complete, and returns its code.
 pub fn system(cmd string) int {
 	ret := C.system(cmd.cstr()) 
-	if ret == -1 {
+	if ret == (-1) {
 		os.print_c_errno()
 	}
 	return ret
@@ -332,10 +333,9 @@ pub fn file_exists(path string) bool {
 pub fn dir_exists(path string) bool {
 	$if windows {
 		attr := int(C.GetFileAttributes(path.cstr())) 
-		println('ATTR =$attr') 
-		return attr == FILE_ATTRIBUTE_DIRECTORY 
-	} 
-	$else { 
+		return attr == FILE_ATTR_DIRECTORY 
+	
+	$else {
 		dir := C.opendir(path.cstr())
 		res := !isnil(dir)
 		if res {
@@ -528,7 +528,7 @@ pub fn getexepath() string {
 pub fn is_dir(path string) bool {
 	$if windows {
 		val := int(C.GetFileAttributes(path.cstr()))
-		return val &FILE_ATTRIBUTE_DIRECTORY > 0
+		return val & FILE_ATTR_DIRECTORY > 0
 	} 
 	$else { 
 		statbuf := C.stat{}
