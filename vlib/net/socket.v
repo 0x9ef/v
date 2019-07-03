@@ -65,7 +65,7 @@ pub fn socket(family int, _type int, proto int) Socket {
 }
 
 // set socket options
-pub fn (s Socket) setsockopt(level int, optname int, optvalue int) int {
+pub fn (s Socket) setsockopt(level int, optname int, optvalue *int) int {
 	res := C.setsockopt(s.sockfd, level, optname, optvalue, C.sizeof(optvalue))
 	return res
 }
@@ -85,6 +85,16 @@ pub fn (s Socket) bind(port int) int {
 pub fn (s Socket) listen() int {
 	backlog := 128
 	res := C.listen(s.sockfd, backlog)
+	return res
+}
+
+// put socket into passive mode with user specified backlog and wait to receive
+pub fn (s Socket) listen_backlog(backlog int) int {
+	mut n := 0
+	if backlog > 0 {
+		n = backlog
+	}
+	res := C.listen(s.sockfd, n)
 	return res
 }
 
@@ -131,7 +141,7 @@ pub fn (s Socket) connect(address string, port int) int {
 	hints.ai_family = AF_UNSPEC
 	hints.ai_socktype = SOCK_STREAM
 	hints.ai_flags = AI_PASSIVE
-	
+
 	info := &C.addrinfo{!}
 	sport := '$port'
 	info_res := C.getaddrinfo(address.cstr(), sport.cstr(), &hints, &info)
@@ -152,6 +162,25 @@ pub fn dial(address string, port int) Socket {
 		println('socket: failed to connect')
 	}
 	return s
+}
+
+// send string data to socket
+pub fn (s Socket) send(buf byteptr, len int) int {
+	res := C.send(s.sockfd, buf, len, 0)
+	if res < 0 {
+		println('socket: send failed')
+	}
+	return res
+}
+
+// receive string data from socket
+pub fn (s Socket) recv(bufsize int) byteptr {
+	buf := malloc(bufsize)
+	res := C.recv(s.sockfd, buf, bufsize, 0)
+	if res < 0 {
+		println('socket: recv failed')
+	}
+	return buf
 }
 
 // shutdown and close socket

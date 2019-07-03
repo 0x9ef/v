@@ -95,7 +95,7 @@ fn (f mut Fn) clear_vars() {
 
 // vlib header file?
 fn (p mut Parser) is_sig() bool {
-	return (p.pref.build_mode == default_mode || p.pref.build_mode == build) &&
+	return (p.pref.build_mode == .default_mode || p.pref.build_mode == .build) &&
 	(p.file_path.contains(TmpPath))
 }
 
@@ -128,7 +128,7 @@ fn (p mut Parser) fn_decl() {
 		is_mut := p.tok == MUT
 		is_amp := p.tok == AMP
 		if is_mut || is_amp {
-			p.next()
+			p.check_space(p.tok) 
 		}
 		receiver_typ = p.get_type()
 		T := p.table.find_type(receiver_typ)
@@ -151,6 +151,7 @@ fn (p mut Parser) fn_decl() {
 			receiver_typ += '*'
 		}
 		p.check(RPAR)
+		p.fspace() 
 		receiver := Var {
 			name: receiver_name
 			is_arg: true
@@ -338,7 +339,7 @@ fn (p mut Parser) fn_decl() {
 		// Add function definition to the top
 		if !is_c && f.name != 'main' && p.first_run() {
 			// TODO hack to make Volt compile without -embed_vlib
-			if f.name == 'darwin__nsstring' && p.pref.build_mode == default_mode {
+			if f.name == 'darwin__nsstring' && p.pref.build_mode == .default_mode {
 				return
 			}
 			p.cgen.fns << fn_decl + ';'

@@ -64,8 +64,8 @@ pub fn convert_ctime(t tm) Time {
 		hour: t.tm_hour
 		minute: t.tm_min
 		second: t.tm_sec
+		uni: C.mktime(&t) 
 	}
-	// uni = uni;
 }
 
 pub fn (t Time) format_ss() string {
@@ -318,4 +318,9 @@ pub fn sleep_ms(n int) {
 	$else { 
 		C.usleep(n * 1000)
 	} 
+}
+
+// Determine whether a year is a leap year.
+pub fn is_leap_year(year int) bool {
+	return (year%4 == 0) && (year%100 != 0 || year%400 == 0)
 }
